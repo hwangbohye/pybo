@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-y1a%lb*u1(b1v%ady&@0ln*jedoexxn@hhjcsi@htl+3meuqzd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['52.78.178.253'] # AWS에서 생성한 고정 IP
 
 
 # Application definition
