@@ -1,0 +1,169 @@
+<!-- HTML의 기본 구조를 정의한 base.html을 상속 받기 -->
+{% extends 'base.html' %}
+<!-- pybo_filter 등록하기  -->
+{% load pybo_filter %}
+
+{% block content %}
+    <!-- container와 my-3, thead-dark는 부트스트랩이 제공하는 클래스임 -->
+    <div class="container my-3">
+        <!-- 정렬 기준 & 검색창 -->
+        <div class="row justify-content-between my-3">
+            <!-- 정렬 기준 -->
+            <div class="col-2">
+                <select class="form-control so">
+                    <option value="recent" {% if so == 'recent' %}selected{% endif %}>
+                        최신순
+                    </option>
+                    <option value="recommend" {% if so == 'recommend' %}selected{% endif %}>
+                        추천순
+                    </option>
+                    <option value="popular" {% if so == 'popular' %}selected{% endif %}>
+                        인기순
+                    </option>
+                </select>
+            </div>
+            
+            <!-- 검색창 -->
+            <div class="col-4 input-group">
+                <!-- js에서 검색창에 입력된 값을 읽을 수 있도록 class속성에 kw를 추가 -->
+                <input type="text" class="form-control kw" value="{{kw|default_if_none:''}}">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button"
+                        id="btn_search">찾기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 질문 목록 -->
+        <table class="table">
+            <thead>
+            <tr class="text-center thead-dark">
+                <th>번호</th>
+                <th>추천</th>
+                <th style="width:50%">제목</th>
+                <th>글쓴이</th>
+                <th>작성일</th>
+            </tr>
+            </thead>
+ 
+            <tbody>
+                {% if question_list %}
+                {% for question in question_list %}
+                <tr class="text-center">
+                    <td>{{question_list.paginator.count|sub:question_list.start_index|sub:forloop.counter0|add:1}}</td>
+                    <td>
+                        {% if question.voter.all.count > 0 %}
+                        <span class="badge badge-warning px-2 py-1">{{question.voter.all.count}}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-left">
+                        <!-- pybo라는 앱의 detail URL 패턴에 question.id 값을 전달하여 해당 질문의 세부 페이지 URL을 동적으로 생성 -->
+                        <a href="{% url 'pybo:detail' question.id %}">
+                            {{question.subject}}
+                            {% if question.answer_set.count > 0 %}
+                            <span class="text-danger small ml-2">
+                                {{question.answer_set.count}}
+                            </span>
+                            {% endif %}
+                        </a>
+                    </td>
+                    <td>{{question.author.username}}</td>
+                    <td>{{question.create_date}}</td>
+                </tr>
+                {% endfor %}
+
+                {% else%}
+                <tr>
+                    <td colspan="3">질문이 없습니다.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- 페이징 처리 시작 -->
+        <!-- 여기서 사용하는 question_list는 views.py의 page_obj임 -->
+        <ul class="pagination justify-content-center">
+            <!-- 이전 페이지 -->
+            {% if question_list.has_previous %}
+                <!-- 이전 페이지가 있다면 링크 활성화됨  -->
+                <li class="page-item">
+                    <a class="page-link"
+                        data-page="{{question_list.previous_page_number}}" href="#">이전</a>
+                </li>
+            {% else %}
+                <!-- 이전 페이지가 없다면 링크 비활성화됨  -->
+                <li class="page-item disabled">
+                    <a class="page-link" tabindex="-1" aria-disabled="true" href="#">이전</a>
+                </li>
+            {% endif %}
+
+            <!-- 페이지 리스트 -->
+            {% for page_number in question_list.paginator.page_range %}
+            <!-- 현재 활성화된 페이지(question_list.number)의 좌우로 5개 이내에 해당하는 페이지는 페이지 리스트에 활성화 -->
+            {% if page_number >= question_list.number|add:-5 and page_number <= question_list.number|add:5 %}
+                <!-- 현재 활성화된 페이지(현재 접속된 페이지) -->
+                {% if page_number == question_list.number %}
+                <li class="page-item active" aria-current="page">
+                    <a class="page-link" data-page="{{page_number}}" href="#">{{page_number}}</a>
+                </li>
+                <!-- 현재 접속된 페이지의 좌우 5개 이내 페이지 -->
+                {% else %}
+                <li class="page-item">
+                    <a class="page-link" data-page="{{page_number}}" href="#">{{page_number}}</a>
+                </li>
+                {% endif %}
+            {% endif %}
+            {%endfor%}
+
+            <!-- 다음 페이지 -->
+            {% if question_list.has_next %}
+            <li class="page-item">
+                <a class="page-link" data-page="{{question_list.next_page_number}}" href="#">다음</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <a class="page-link" tabindex="-1" aria-disabled="true" href="#">다음</a>
+            </li>
+            {% endif %}
+        </ul>
+        <!-- 페이징 처리 끝 -->
+
+        <!-- 질문 등록 -->
+        <a href="{% url 'pybo:question_create' %}" class="btn btn-primary">질문 등록하기</a>
+    </div>
+
+    <!-- page와 kw를 동시에 GET으로 요청할 수 있도록하는 form 요소 -->
+    <!-- 다음 폼이 제출되면, 폼에 제출된 정보를 통해 index경로로 이동  -->
+    <form id="searchForm" method="get" action="{% url 'index' %}">
+        <input type="hidden"  id="kw" name="kw" value="{{kw|default_if_none:''}}">
+        <input type="hidden" id="page" name="page" value="{{page}}">
+        <input type="hidden" id="so" name="so" value="{{so}}">
+    </form>
+{% endblock %}
+
+
+
+<!-- JS 코드  -->
+{% block script %}
+<script type="text/javascript">
+$(document).ready(function(){
+    //searchForm이 제출되면, HTML에서 id="searchForm"인 폼 요소가 수행되면서 해당 요소에 명시된 경로로 이동!  
+    $(".page-link").on('click', function(){ //class 속성이 page-link인 요소 누르면
+        $("#page").val($(this).data("page"));   // this(class='page-link'인 요소)의 data-page 값을 searchForm 내 id="page"인 요소의 값으로 설정
+        $("#searchForm").submit(); //id="searchForm"인 폼(form)을 제출
+    });
+
+    $("#btn_search").on('click',function(){ //id='btn_search'인 검색 버튼을 클릭할 경우
+        $("#kw").val($(".kw").val());   // 검색창에 입력된 값을 searchForm의 id='kw'인 요소의 value로 설정
+        $("#page").val(1);   // searchForm 내 id="page"인 요소의 값을 1로 설정
+        $("#searchForm").submit(); //id="searchForm"인 폼(form)을 제출
+    });
+
+    $('.so').on('change', function(){//class 속성이 so인 요소의 '옵션'값이 변경되면(== 정렬 기준 변경)
+        $('#so').val($(this).val()); //this(class='so'인 요소)의 (옵션)값을 searchForm 내 id="so"인 요소의 value로 설정
+        $('#page').val(1);  // searchForm 내 id="page"인 요소의 값을 1로 설정
+        $('#searchForm').submit(); //id="searchForm"인 폼(form)을 제출
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-3">
+    <div class="row my-3">
+        <div class="col-4">
+            <h4>회원가입</h4>
+        </div>
+
+        <!-- 로그인 페이지 이동 링크 -->
+        <div class="col-8 text-right">
+            <span>또는 <a href="{% url 'common:login' %}">로그인하세요.</a></span>
+        </div>
+    </div>
+
+    <form method="post" class="post-form">
+        {% csrf_token %}
+
+        <!-- 오류 표시를 위해 form_errors.html 삽입 -->
+        {% include "form_errors.html" %}
+        
+        <!-- 회원 가입시 필요한 폼의 필드 입력 형식  -->
+        <div class="form-group">
+            <label for="username">사용자 이름</label>
+            <input type="text" class="form-control" name="username" id="username"
+                value="{{form.username.vlaue|default_if_none:''}}">
+        </div>
+
+        <div>
+            <label for="password1">비밀번호</label>
+            <input type="password" class="form-control" name="password1" id="password1"
+                value="{{form.password1.vlaue|default_if_none:''}}">
+        </div>
+
+        <div>
+            <label for="password2">비밀번호 확인</label>
+            <input type="password" class="form-control" name="password2" id="password2"
+                value="{{form.password2.vlaue|default_if_none:''}}">
+        </div>
+
+        <div>
+            <label for="email">이메일</label>
+            <input type="text" class="form-control" name="email" id="email"
+                value="{{form.email.vlaue|default_if_none:''}}">
+        </div>
+
+        <button type="submit" class="bnt btn-primary">생성하기</button>
+    </form>
+</div>
+{% endblock %}
